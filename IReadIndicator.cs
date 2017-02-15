@@ -4,6 +4,6 @@ namespace SharpLeftRight
     {
         void Arrive();
         void Depart();
-        bool IsOccupied();
+        bool IsOccupied { get };
     }
 }
