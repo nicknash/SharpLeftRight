@@ -1,15 +1,75 @@
 using System;
+using System.Threading;
 
 namespace SharpLeftRight
 {
+    class MemoryOrdered
+    {
+        private long _value;
+        public MemoryOrdered(long initialValue)
+        {
+            _value = initialValue;
+        }
+
+        public long ReadSeqCst
+        {
+            get
+            {
+                Interlocked.Read(ref _value);
+                return _value;
+            }
+        }
+        public void WriteSeqCst(long newValue)
+        {
+            Interlocked.Exchange(ref _value, newValue);
+        }
+    }
+    struct ReadContext<T>
+    {
+        private readonly IReadIndicator _readIndicator;
+
+        public readonly T ReadInstance;
+
+        public ReadContext(IReadIndicator readIndicator, T readInstance)
+        {
+            _readIndicator = readIndicator;
+            ReadInstance = readInstance;
+        }
+        public void ReadCompleted()
+        {
+            _readIndicator.Depart();
+        }
+    }
+
+    struct WriteContext<T>
+    {
+        public readonly long _nextReadIndex;
+
+        public readonly LeftRight _leftRight;
+        public readonly T FirstWriteTarget;
+        public readonly T SecondWriteTarget;
+
+        public WriteContext(long nextReadIndex, T firstWriteTarget, T secondWriteTarget, LeftRight leftRight)
+        {
+            _nextReadIndex = nextReadIndex;
+            _leftRight = leftRight;
+            FirstWriteTarget = firstWriteTarget;
+            SecondWriteTarget = secondWriteTarget;
+        }
+
+        public void WaitBeforeSecondWrite()
+        {
+            _leftRight.WaitBeforeSecondWrite(_nextReadIndex);
+        }
+    }
     class LeftRight
     {
         private IReadIndicator[] _readIndicator;
         private IWaitStrategy _waitStrategy;
-        private int _versionIndex;
+        private MemoryOrdered _versionIndex = new MemoryOrdered(0);
 
-        public WhereToRead ReadLocation { get; set; }
-
+        private MemoryOrdered _readIndex = new MemoryOrdered(0);
+        
         public readonly Object WritersMutex;
 
         public LeftRight(IWaitStrategy waitStrategy)
@@ -17,34 +77,34 @@ namespace SharpLeftRight
             _waitStrategy = waitStrategy;
         }
 
-
-        // Traditional interface below here
-
-        public int Arrive()
+        public ReadContext<T> BeginRead<T>(T[] instances)
         {
-            int localVersionIndex = _versionIndex; // TODO: Requires a memory fence
-            _readIndicator[localVersionIndex].Arrive();
-            return localVersionIndex;
+            var versionIndex = _versionIndex.ReadSeqCst;
+            var readIndicator = _readIndicator[versionIndex];
+            readIndicator.Arrive();
+            return new ReadContext<T>(readIndicator, instances[_readIndex.ReadSeqCst]);
+        }
+        public WriteContext<T> BeginWrite<T>(T[] instances)
+        {
+            var readIndex = _readIndex.ReadSeqCst;
+            var nextReadIndex = WrappedIncrement(readIndex);
+            return new WriteContext<T>(nextReadIndex, instances[nextReadIndex], instances[readIndex], this);
         }
 
-        public void ToggleVersionAndWait()
+        internal void WaitBeforeSecondWrite(long nextReadIndex)
         {
-            int localVersionIndex = _versionIndex; // TODO requires a memory fence
-            int previousVersionIndex = localVersionIndex & 1;
-            int nextVersionIndex = (localVersionIndex + 1) & 1;
+            _readIndex.WriteSeqCst(nextReadIndex);
+            var versionIndex = _versionIndex.ReadSeqCst;
+            var nextVersionIndex = WrappedIncrement(versionIndex);
 
             _waitStrategy.WaitWhileOccupied(_readIndicator[nextVersionIndex]);
-
-            _versionIndex = nextVersionIndex; // TODO requires a memory fence
-
-            _waitStrategy.WaitWhileOccupied(_readIndicator[previousVersionIndex]);
+            _versionIndex.WriteSeqCst(nextVersionIndex);
+            _waitStrategy.WaitWhileOccupied(_readIndicator[versionIndex]);
 
         }
-
-        public void Depart(int versionIndex)
+        private static long WrappedIncrement(long i)
         {
-            _readIndicator[versionIndex].Depart();
+            return i ^ 1;
         }
-
     }
 }

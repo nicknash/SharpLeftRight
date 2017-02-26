@@ -32,16 +32,20 @@ namespace SharpLeftRight
             Interlocked.Decrement(ref _occupancyCounts[index]);
         }
 
-        public bool IsOccupied()
+        public bool IsOccupied
         {
-            for(int i = 0; i < _occupancyCounts.Length; ++i)
+            get
             {
-                if(_occupancyCounts[i << _paddingPower] > 0)
+                // TODO: Memory fencing!
+                for (int i = 0; i < _occupancyCounts.Length; ++i)
                 {
-                    return true;
+                    if (_occupancyCounts[i << _paddingPower] > 0)
+                    {
+                        return true;
+                    }
                 }
+                return false;
             }
-            return false;
         }
     }
 }
