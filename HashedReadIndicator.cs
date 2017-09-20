@@ -5,11 +5,13 @@ namespace SharpLeftRight
     class HashedReadIndicator : IReadIndicator
     {
         private int[] _occupancyCounts;
-        private int _paddingPower;
+        private readonly int _paddingPower;
+        private readonly int _numEntries;
 
         public HashedReadIndicator(int numEntries, int paddingPower)
         {
             _occupancyCounts = new int[numEntries << paddingPower];
+            _numEntries = numEntries;
             _paddingPower = paddingPower;
         }
 
@@ -37,7 +39,7 @@ namespace SharpLeftRight
             get
             {
                 // TODO: Memory fencing!
-                for (int i = 0; i < _occupancyCounts.Length; ++i)
+                for (int i = 0; i < _numEntries; ++i)
                 {
                     if (_occupancyCounts[i << _paddingPower] > 0)
                     {

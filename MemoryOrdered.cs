@@ -8,6 +8,8 @@ class MemoryOrdered
         _value = initialValue;
     }
 
+    public long ReadUnordered => _value;
+
     public long ReadSeqCst
     {
         get
@@ -16,6 +18,11 @@ class MemoryOrdered
             return _value;
         }
     }
+    public void WriteUnordered(long newValue)
+    {
+        _value = newValue;
+    }
+
     public void WriteSeqCst(long newValue)
     {
         Interlocked.Exchange(ref _value, newValue);
