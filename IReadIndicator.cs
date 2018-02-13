@@ -1,6 +1,6 @@
 namespace SharpLeftRight
 {
-    interface IReadIndicator
+    public interface IReadIndicator
     {
         void Arrive();
         void Depart();

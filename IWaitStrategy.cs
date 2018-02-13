@@ -1,6 +1,6 @@
 namespace SharpLeftRight
 {
-    interface IWaitStrategy
+    public interface IWaitStrategy
     {
         void WaitWhileOccupied(IReadIndicator readIndicator);
     }

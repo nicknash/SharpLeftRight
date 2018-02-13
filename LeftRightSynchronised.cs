@@ -2,12 +2,12 @@ using System;
 
 namespace SharpLeftRight
 {
-    class LeftRightSynchronised<T>
+    public class LeftRightSynchronised<T>
     {
         private readonly T[] _instances;
         private readonly LeftRight _leftRight; 
         
-        public LeftRightSynchronised(T left, T right, LeftRight leftRight)
+        internal LeftRightSynchronised(T left, T right, LeftRight leftRight)
         {
             _instances = new[]{left, right};
             _leftRight = leftRight;
