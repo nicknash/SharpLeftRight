@@ -13,9 +13,10 @@ namespace SharpLeftRight
             var left = new Dictionary<string, int>();
             var right = new Dictionary<string, int>();
 
-            var waitStrategy = new SpinWaitStrategy();
+            var waitStrategy = new YieldWaitStrategy();
             var readIndicators = new[]{new HashedReadIndicator(10, 7), new HashedReadIndicator(10, 7) };
-            var leftRightSync = new LeftRightSynchronised<Dictionary<string, int>>(left, right, new LeftRight(waitStrategy, readIndicators));
+            var leftRightSync = LeftRightBuilder.Build(left, right);
+              new LeftRightSynchronised<Dictionary<string, int>>(left, right, new LeftRight(waitStrategy, readIndicators));
 
             int total = leftRightSync.Read(i => 
             { int t = 0; foreach(var x in i.Values) { t += x;} return t;} );
