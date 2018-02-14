@@ -33,6 +33,5 @@ namespace SharpLeftRight
         }
 
         private static HashedReadIndicator BuildReadIndicator() => new HashedReadIndicator(8, 7);
-
   }
 }
