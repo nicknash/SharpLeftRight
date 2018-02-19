@@ -1,14 +1,14 @@
 using System;
 using Xunit;
+using RelaSharp;
 
 namespace SharpLeftRight.Tests
 {
-    public class UnitTest1
+    public class RelaTests
     {
         [Fact]
         public void Test1()
         {
-            Console.WriteLine("test");
             Xunit.Assert.True(false);
         }
     }
