@@ -6,6 +6,11 @@ namespace SharpLeftRight
     {
         private readonly T[] _instances;
         private readonly LeftRight _leftRight; 
+
+        internal void SetSnoop(IInstanceSnoop snoop)
+        {
+            _leftRight.SetSnoop(snoop);
+        }
         
         internal LeftRightSynchronised(T left, T right, LeftRight leftRight)
         {

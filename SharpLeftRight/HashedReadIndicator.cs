@@ -1,16 +1,17 @@
 using System.Threading;
+using RelaSharp.CLR;
 
 namespace SharpLeftRight
 {
     class HashedReadIndicator : IReadIndicator
     {
-        private int[] _occupancyCounts;
+        private CLRAtomicInt[] _occupancyCounts;
         private readonly int _paddingPower;
         private readonly int _numEntries;
 
         public HashedReadIndicator(int numEntries, int paddingPower)
         {
-            _occupancyCounts = new int[numEntries << paddingPower];
+            _occupancyCounts = new CLRAtomicInt[numEntries << paddingPower];
             _numEntries = numEntries;
             _paddingPower = paddingPower;
         }
@@ -18,20 +19,20 @@ namespace SharpLeftRight
         private int GetIndex()
         {
             var threadId = Thread.CurrentThread.ManagedThreadId; 
-            var result = threadId.GetHashCode() << _paddingPower;
+            var result = (threadId.GetHashCode() << _paddingPower) % _numEntries;
             return result;
         }
         
         public void Arrive()
         {
             int index = GetIndex();
-            Interlocked.Increment(ref _occupancyCounts[index]);
+            RInterlocked.Increment(ref _occupancyCounts[index]);
         }
 
         public void Depart()
         {
             int index = GetIndex();
-            Interlocked.Decrement(ref _occupancyCounts[index]);
+            RInterlocked.Decrement(ref _occupancyCounts[index]);
         }
 
         public bool IsOccupied
@@ -41,7 +42,7 @@ namespace SharpLeftRight
                 // TODO: Memory fencing!
                 for (int i = 0; i < _numEntries; ++i)
                 {
-                    if (_occupancyCounts[i << _paddingPower] > 0)
+                    if (RVolatile.Read(ref _occupancyCounts[i << _paddingPower]) > 0)
                     {
                         return true;
                     }

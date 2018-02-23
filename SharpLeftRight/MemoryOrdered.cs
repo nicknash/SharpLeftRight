@@ -1,30 +1,30 @@
 using System.Threading;
+using RelaSharp.CLR;
 
 class MemoryOrdered
 {
-    private long _value;
+    private CLRAtomicLong _value;
     public MemoryOrdered(long initialValue)
     {
-        _value = initialValue;
+        RVolatile.Write(ref _value, initialValue);
     }
 
-    public long ReadUnordered => _value;
+    public long ReadUnordered => RUnordered.Read(ref _value);
 
     public long ReadSeqCst
     {
         get
         {
-            Interlocked.Read(ref _value);
-            return _value;
+            return RInterlocked.Read(ref _value);
         }
     }
     public void WriteUnordered(long newValue)
     {
-        _value = newValue;
+        RUnordered.Write(ref _value, newValue);
     }
 
     public void WriteSeqCst(long newValue)
     {
-        Interlocked.Exchange(ref _value, newValue);
+        RInterlocked.Exchange(ref _value, newValue);
     }
 }
