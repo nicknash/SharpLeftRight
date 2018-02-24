@@ -1,8 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>SharpLeftRight</AssemblyName>
+    <PackageId>SharpLeftRight</PackageId>
+    <Version>1.0.0</Version>
   </PropertyGroup>
   <ItemGroup>
-      <PackageReference Include="RelaSharp.Engine" Version="1.0.2" />
+      <PackageReference Include="RelaSharp.Engine" Version="1.0.4" />
   </ItemGroup>
 </Project>

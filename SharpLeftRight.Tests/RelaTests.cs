@@ -7,13 +7,14 @@ using SharpLeftRight;
 namespace SharpLeftRight.Tests
 {
     public class RelaTests
-    {
+    { 
         class LeftRightSnoopTest : IRelaTest
         {
             private static IRelaEngine RE = RelaEngine.RE;
 
             public IReadOnlyList<Action> ThreadEntries { get; }
             private LeftRightSynchronised<Dictionary<int, string>> _leftRightDictionary;
+            private int _numWrites = 5;
 
             public LeftRightSnoopTest()
             {
@@ -42,17 +43,18 @@ namespace SharpLeftRight.Tests
 
             public void WriteThread()
             {
-                for (int i = 0; i < 5; ++i)
+                for (int i = 0; i < _numWrites; ++i)
                 {
-                    _leftRightDictionary.Write(d => d[i] = $"Wrote This: {i}");
+                    _leftRightDictionary.Write(d => d[i] = $"Wrote this: {i}");
                 }
             }
         }
 
 
         [Fact]
-        public void Test1()
-        {
+        public void RelaSnoopTest()
+        { 
+            RelaEngine.Mode = EngineMode.Test;
             TestRunner.TR.RunTest(() => new LeftRightSnoopTest());
             bool failed = TestRunner.TR.TestFailed;
             if(failed)
@@ -61,5 +63,7 @@ namespace SharpLeftRight.Tests
             }
             Xunit.Assert.False(failed);
         }
+    
+   
     }
 }
