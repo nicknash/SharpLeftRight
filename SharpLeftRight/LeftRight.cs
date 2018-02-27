@@ -8,8 +8,8 @@ namespace SharpLeftRight
         private readonly Object _writersMutex = new Object();
         private IReadIndicator[] _readIndicators;
         private IWaitStrategy _waitStrategy;
-        private MemoryOrdered _versionIndex = new MemoryOrdered(0);
-        private MemoryOrdered _readIndex = new MemoryOrdered(0);
+        private CLRAtomicLong _versionIndex;
+        private CLRAtomicLong _readIndex;
         private IInstanceSnoop _snoop = NullSnoop.Instance;
         
         internal void SetSnoop(IInstanceSnoop snoop)
@@ -25,12 +25,12 @@ namespace SharpLeftRight
 
         public U Read<T, U>(T[] instances, Func<T, U> read)
         {
-            var versionIndex = _versionIndex.ReadUnordered;
+            var versionIndex = RUnordered.Read(ref _versionIndex);
             var readIndicator = _readIndicators[versionIndex];
             readIndicator.Arrive();     
             try
             {
-                var readIndex = _readIndex.ReadSeqCst;
+                var readIndex = RInterlocked.Read(ref _readIndex);
                 _snoop.BeginRead(readIndex);
                 var result = read(instances[readIndex]);
                 _snoop.EndRead(readIndex);
@@ -47,7 +47,7 @@ namespace SharpLeftRight
             RMonitor.Enter(_writersMutex);
             try
             {
-                var readIndex = _readIndex.ReadUnordered;
+                var readIndex = RUnordered.Read(ref _readIndex);
                 var nextReadIndex = Flip(readIndex);
                 try
                 {
@@ -57,11 +57,11 @@ namespace SharpLeftRight
                 }
                 finally
                 {
-                    _readIndex.WriteSeqCst(nextReadIndex);
-                    var versionIndex = _versionIndex.ReadUnordered;
+                    RInterlocked.Exchange(ref _readIndex, nextReadIndex);
+                    var versionIndex = RUnordered.Read(ref _versionIndex);
                     var nextVersionIndex = Flip(versionIndex);
                     _waitStrategy.WaitWhileOccupied(_readIndicators[nextVersionIndex]);
-                    _versionIndex.WriteUnordered(nextVersionIndex);
+                    RUnordered.Write(ref _versionIndex, nextVersionIndex);
                     _waitStrategy.WaitWhileOccupied(_readIndicators[versionIndex]);
                     _snoop.BeginWrite(readIndex);
                     write(instances[readIndex]);
