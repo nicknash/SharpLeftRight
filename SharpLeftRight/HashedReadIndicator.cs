@@ -39,7 +39,6 @@ namespace SharpLeftRight
         {
             get
             {
-                // TODO: Memory fencing!
                 for (int i = 0; i < _numEntries; ++i)
                 {
                     if (RVolatile.Read(ref _occupancyCounts[i << _paddingPower]) > 0)
